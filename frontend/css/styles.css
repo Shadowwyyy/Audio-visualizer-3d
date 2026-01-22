@@ -1,0 +1,347 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    background: #0a0a0a;
+    color: #ffffff;
+    overflow: hidden;
+    height: 100vh;
+}
+
+/* Visualizer Canvas */
+#visualizer-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+}
+
+#visualizer-container canvas {
+    display: block;
+}
+
+/* UI Overlay */
+#ui-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    pointer-events: none;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+#ui-overlay > * {
+    pointer-events: auto;
+}
+
+/* Header */
+#header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#header h1 {
+    font-size: 1.5rem;
+    font-weight: 300;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    opacity: 0.8;
+}
+
+/* Spotify Panel */
+#spotify-panel {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}
+
+#spotify-connect-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #1DB954;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#spotify-connect-btn:hover {
+    background: #1ed760;
+    transform: scale(1.02);
+}
+
+#spotify-track-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+    padding: 10px 15px;
+    border-radius: 8px;
+    max-width: 300px;
+}
+
+#track-album-art {
+    width: 50px;
+    height: 50px;
+    border-radius: 4px;
+    object-fit: cover;
+}
+
+#track-details {
+    flex: 1;
+    min-width: 0;
+}
+
+#track-name {
+    font-weight: 600;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#track-artist {
+    font-size: 12px;
+    opacity: 0.7;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#spotify-disconnect-btn {
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    padding: 5px;
+    font-size: 16px;
+    transition: color 0.2s;
+}
+
+#spotify-disconnect-btn:hover {
+    color: #fff;
+}
+
+/* Source Panel */
+#source-panel {
+    position: absolute;
+    top: 80px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 15px;
+    min-width: 200px;
+}
+
+#source-tabs {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 15px;
+}
+
+.source-tab {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #888;
+    padding: 8px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.source-tab:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #aaa;
+}
+
+.source-tab.active {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+.source-controls {
+    margin-top: 10px;
+}
+
+.source-controls button {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.source-controls button:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.source-controls button.active {
+    background: #1DB954;
+    border-color: #1DB954;
+}
+
+/* File Input */
+#audio-file-input {
+    display: none;
+}
+
+#file-label {
+    display: block;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px dashed rgba(255, 255, 255, 0.3);
+    color: #fff;
+    padding: 15px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: center;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+#file-label:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+#audio-player {
+    width: 100%;
+    margin-top: 10px;
+    height: 35px;
+}
+
+/* Settings Panel */
+#settings-panel {
+    position: absolute;
+    bottom: 60px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    min-width: 220px;
+}
+
+#settings-panel details {
+    padding: 15px;
+}
+
+#settings-panel summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 10px;
+    outline: none;
+}
+
+#settings-panel details[open] summary {
+    margin-bottom: 15px;
+}
+
+.setting {
+    margin-bottom: 15px;
+}
+
+.setting:last-child {
+    margin-bottom: 0;
+}
+
+.setting label {
+    display: block;
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 6px;
+}
+
+.setting input[type="range"] {
+    width: 100%;
+    height: 4px;
+    -webkit-appearance: none;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    outline: none;
+}
+
+.setting input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.setting select {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    outline: none;
+}
+
+.setting select option {
+    background: #1a1a1a;
+}
+
+/* Status Bar */
+#status-bar {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    display: flex;
+    gap: 20px;
+    font-size: 12px;
+    color: #666;
+}
+
+#status-text.connected {
+    color: #1DB954;
+}
+
+#status-text.error {
+    color: #e74c3c;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    #source-panel {
+        top: auto;
+        bottom: 80px;
+        left: 10px;
+        right: 10px;
+        min-width: auto;
+    }
+
+    #spotify-panel {
+        right: 10px;
+    }
+
+    #settings-panel {
+        display: none;
+    }
+}
