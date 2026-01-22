@@ -1,42 +1,41 @@
 /**
- * Three.js Audio Visualizer
- * Reactive 3D geometry that responds to audio input.
+ * Three.js Audio Visualizer - Smooth & Polished Version
  */
 
 class Visualizer {
     constructor(container) {
         this.container = container;
         
-        // Three.js components
         this.scene = null;
         this.camera = null;
         this.renderer = null;
         
-        // Visualizer objects
+        // Visual elements
         this.particles = null;
-        this.centerSphere = null;
+        this.centerMesh = null;
         this.rings = [];
+        this.glowMesh = null;
         
-        // Animation state
+        // Animation
         this.isRunning = false;
         this.frameId = null;
         this.clock = new THREE.Clock();
         
-        // Audio reactive state
-        this.currentHue = 0;
-        this.targetHue = 0;
-        this.currentEnergy = 0;
-        this.targetEnergy = 0;
-        this.beatIntensity = 0;
+        // Audio reactive state - using lerped values for smoothness
+        this.energy = { current: 0, target: 0 };
+        this.bass = { current: 0, target: 0 };
+        this.mid = { current: 0, target: 0 };
+        this.high = { current: 0, target: 0 };
+        this.hue = { current: 200, target: 200 };
         
         // Settings
         this.settings = {
             sensitivity: 1.5,
-            smoothing: 0.8,
+            smoothing: 0.92,
             colorMode: 'pitch'
         };
         
-        // FPS tracking
+        // FPS
         this.fps = 0;
         this.frameCount = 0;
         this.lastFpsUpdate = 0;
@@ -45,14 +44,14 @@ class Visualizer {
     }
 
     _init() {
-        // Scene
+        // Scene with gradient background feel
         this.scene = new THREE.Scene();
-        this.scene.fog = new THREE.FogExp2(0x000000, 0.001);
+        this.scene.fog = new THREE.FogExp2(0x000011, 0.0008);
 
         // Camera
         const aspect = window.innerWidth / window.innerHeight;
-        this.camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 2000);
-        this.camera.position.z = 100;
+        this.camera = new THREE.PerspectiveCamera(60, aspect, 0.1, 2000);
+        this.camera.position.z = 120;
 
         // Renderer
         this.renderer = new THREE.WebGLRenderer({ 
@@ -63,27 +62,28 @@ class Visualizer {
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.container.appendChild(this.renderer.domElement);
 
-        // Create visual elements
+        // Create elements
         this._createParticles();
-        this._createCenterSphere();
+        this._createCenterMesh();
         this._createRings();
+        this._createGlow();
         this._createLights();
 
-        // Handle resize
         window.addEventListener('resize', () => this._onResize());
     }
 
     _createParticles() {
-        const count = 2000;
+        const count = 1500;
         const geometry = new THREE.BufferGeometry();
         
         const positions = new Float32Array(count * 3);
         const colors = new Float32Array(count * 3);
         const sizes = new Float32Array(count);
+        const phases = new Float32Array(count); // For individual animation timing
         
         for (let i = 0; i < count; i++) {
-            // Spherical distribution
-            const radius = 50 + Math.random() * 150;
+            // Distribute in a sphere with varying density
+            const radius = 40 + Math.pow(Math.random(), 0.5) * 120;
             const theta = Math.random() * Math.PI * 2;
             const phi = Math.acos(2 * Math.random() - 1);
             
@@ -91,81 +91,107 @@ class Visualizer {
             positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
             positions[i * 3 + 2] = radius * Math.cos(phi);
             
-            colors[i * 3] = 1;
-            colors[i * 3 + 1] = 1;
-            colors[i * 3 + 2] = 1;
+            // Soft blue-cyan initial colors
+            colors[i * 3] = 0.4 + Math.random() * 0.2;
+            colors[i * 3 + 1] = 0.6 + Math.random() * 0.3;
+            colors[i * 3 + 2] = 0.9 + Math.random() * 0.1;
             
-            sizes[i] = Math.random() * 2 + 0.5;
+            sizes[i] = 0.5 + Math.random() * 1.5;
+            phases[i] = Math.random() * Math.PI * 2;
         }
         
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
         geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
         
-        // Store original positions for animation
+        this.particlePhases = phases;
         this.particleOriginalPositions = positions.slice();
         
         const material = new THREE.PointsMaterial({
-            size: 1.5,
+            size: 2,
             vertexColors: true,
             transparent: true,
-            opacity: 0.8,
-            blending: THREE.AdditiveBlending
+            opacity: 0.7,
+            blending: THREE.AdditiveBlending,
+            sizeAttenuation: true
         });
         
         this.particles = new THREE.Points(geometry, material);
         this.scene.add(this.particles);
     }
 
-    _createCenterSphere() {
-        const geometry = new THREE.IcosahedronGeometry(15, 2);
+    _createCenterMesh() {
+        // Smoother sphere with more segments
+        const geometry = new THREE.IcosahedronGeometry(12, 3);
         const material = new THREE.MeshPhongMaterial({
-            color: 0xffffff,
+            color: 0x4488ff,
+            emissive: 0x112244,
             wireframe: true,
             transparent: true,
-            opacity: 0.6
+            opacity: 0.8
         });
         
-        this.centerSphere = new THREE.Mesh(geometry, material);
-        this.scene.add(this.centerSphere);
+        this.centerMesh = new THREE.Mesh(geometry, material);
+        this.scene.add(this.centerMesh);
         
-        // Store original vertices for morphing
-        this.sphereOriginalPositions = geometry.attributes.position.array.slice();
+        this.centerOriginalPositions = geometry.attributes.position.array.slice();
     }
 
     _createRings() {
-        const ringCount = 5;
+        const ringCount = 4;
         
         for (let i = 0; i < ringCount; i++) {
-            const radius = 25 + i * 15;
-            const geometry = new THREE.TorusGeometry(radius, 0.3, 8, 100);
+            const radius = 20 + i * 12;
+            // Thinner, smoother rings
+            const geometry = new THREE.TorusGeometry(radius, 0.15, 16, 128);
             const material = new THREE.MeshBasicMaterial({
-                color: 0xffffff,
+                color: 0x4488ff,
                 transparent: true,
-                opacity: 0.3
+                opacity: 0.2,
+                blending: THREE.AdditiveBlending
             });
             
             const ring = new THREE.Mesh(geometry, material);
             ring.rotation.x = Math.PI / 2;
-            ring.userData.baseRadius = radius;
-            ring.userData.index = i;
+            ring.userData = { 
+                baseRadius: radius, 
+                index: i,
+                rotationSpeed: 0.1 + i * 0.05,
+                phase: i * Math.PI / 4
+            };
             
             this.rings.push(ring);
             this.scene.add(ring);
         }
     }
 
+    _createGlow() {
+        // Central glow sphere
+        const geometry = new THREE.SphereGeometry(18, 32, 32);
+        const material = new THREE.MeshBasicMaterial({
+            color: 0x4488ff,
+            transparent: true,
+            opacity: 0.1,
+            blending: THREE.AdditiveBlending
+        });
+        
+        this.glowMesh = new THREE.Mesh(geometry, material);
+        this.scene.add(this.glowMesh);
+    }
+
     _createLights() {
-        const ambient = new THREE.AmbientLight(0x404040, 0.5);
+        const ambient = new THREE.AmbientLight(0x334455, 0.5);
         this.scene.add(ambient);
         
-        const point1 = new THREE.PointLight(0xffffff, 1, 200);
+        const point1 = new THREE.PointLight(0x4488ff, 1, 300);
         point1.position.set(50, 50, 50);
         this.scene.add(point1);
+        this.mainLight = point1;
         
-        const point2 = new THREE.PointLight(0xffffff, 0.5, 200);
-        point2.position.set(-50, -50, 50);
+        const point2 = new THREE.PointLight(0x8844ff, 0.5, 200);
+        point2.position.set(-50, -30, 50);
         this.scene.add(point2);
+        this.secondLight = point2;
     }
 
     _onResize() {
@@ -178,101 +204,71 @@ class Visualizer {
     }
 
     // ==========================================
-    // Public API - Called by SpotifyVisualizer
+    // Audio Input Methods
     // ==========================================
 
-    /**
-     * Called on every beat.
-     * @param {number} intensity - 0 to 1
-     */
     onBeat(intensity) {
-        this.beatIntensity = intensity * this.settings.sensitivity;
+        // Soft beat response
+        this.bass.target = Math.min(1, this.bass.target + intensity * 0.5);
     }
 
-    /**
-     * Called on segment changes.
-     * @param {Object} data - { hue, loudness, pitches, timbre }
-     */
     onSegment(data) {
-        this.targetHue = data.hue;
-        this.targetEnergy = data.loudness * this.settings.sensitivity;
+        this.hue.target = data.hue;
+        this.energy.target = data.loudness;
     }
 
-    /**
-     * Called on section changes.
-     * @param {Object} data - { tempo, key, isMajor, energy }
-     */
     onSection(data) {
-        // Could trigger scene transitions here
+        // Gentle section transitions
     }
 
-    /**
-     * Called every frame with current segment (for smooth updates).
-     * @param {Object} segment - Raw segment data
-     */
     updateFromSegment(segment) {
         if (!segment) return;
         
-        // Normalize loudness (-60 to 0 dB range typically)
         const loudness = Math.min(1, Math.max(0, (segment.loudness + 60) / 60));
-        this.targetEnergy = loudness * this.settings.sensitivity;
+        this.energy.target = loudness * this.settings.sensitivity;
         
-        // Get dominant pitch for color
         if (segment.pitches && segment.pitches.length === 12) {
             const maxPitch = Math.max(...segment.pitches);
             const pitchIndex = segment.pitches.indexOf(maxPitch);
-            this.targetHue = (pitchIndex / 12) * 360;
+            this.hue.target = (pitchIndex / 12) * 360;
         }
     }
 
-    /**
-     * Update from Web Audio API analyser (mic/file mode).
-     * @param {Uint8Array} frequencyData
-     * @param {Uint8Array} waveformData
-     */
     updateFromAnalyser(frequencyData, waveformData) {
         if (!frequencyData || !frequencyData.length) return;
         
-        // Calculate energy from frequency data
-        let sum = 0;
-        for (let i = 0; i < frequencyData.length; i++) {
-            sum += frequencyData[i];
-        }
-        const avgFrequency = sum / frequencyData.length / 255;
-        this.targetEnergy = avgFrequency * this.settings.sensitivity;
+        const len = frequencyData.length;
         
-        // Bass for beats
-        let bassSum = 0;
-        const bassEnd = Math.floor(frequencyData.length * 0.1);
-        for (let i = 0; i < bassEnd; i++) {
-            bassSum += frequencyData[i];
-        }
-        const bassAvg = bassSum / bassEnd / 255;
+        // Split into frequency bands
+        const bassEnd = Math.floor(len * 0.1);
+        const midEnd = Math.floor(len * 0.5);
         
-        if (bassAvg > 0.7) {
-            this.beatIntensity = bassAvg;
+        let bassSum = 0, midSum = 0, highSum = 0;
+        
+        for (let i = 0; i < len; i++) {
+            const val = frequencyData[i] / 255;
+            if (i < bassEnd) bassSum += val;
+            else if (i < midEnd) midSum += val;
+            else highSum += val;
         }
+        
+        this.bass.target = (bassSum / bassEnd) * this.settings.sensitivity;
+        this.mid.target = (midSum / (midEnd - bassEnd)) * this.settings.sensitivity;
+        this.high.target = (highSum / (len - midEnd)) * this.settings.sensitivity;
+        
+        // Overall energy
+        this.energy.target = (this.bass.target * 0.5 + this.mid.target * 0.3 + this.high.target * 0.2);
         
         // Color from mid frequencies
-        const midStart = Math.floor(frequencyData.length * 0.2);
-        const midEnd = Math.floor(frequencyData.length * 0.6);
-        let midSum = 0;
-        for (let i = midStart; i < midEnd; i++) {
-            midSum += frequencyData[i];
-        }
-        const midAvg = midSum / (midEnd - midStart) / 255;
-        this.targetHue = midAvg * 360;
+        this.hue.target = this.mid.target * 360;
     }
 
-    /**
-     * Update settings.
-     */
     updateSettings(settings) {
         Object.assign(this.settings, settings);
     }
 
     // ==========================================
-    // Animation Loop
+    // Animation
     // ==========================================
 
     start() {
@@ -290,35 +286,38 @@ class Visualizer {
         }
     }
 
+    _lerp(current, target, smoothing) {
+        return current + (target - current) * (1 - smoothing);
+    }
+
     _animate() {
         if (!this.isRunning) return;
         
         this.frameId = requestAnimationFrame(() => this._animate());
         
-        const delta = this.clock.getDelta();
         const elapsed = this.clock.getElapsedTime();
-        
-        // Smooth transitions
         const smoothing = this.settings.smoothing;
-        this.currentHue += (this.targetHue - this.currentHue) * (1 - smoothing);
-        this.currentEnergy += (this.targetEnergy - this.currentEnergy) * (1 - smoothing);
-        this.beatIntensity *= 0.9; // Decay beat
+        
+        // Smooth all values
+        this.energy.current = this._lerp(this.energy.current, this.energy.target, smoothing);
+        this.bass.current = this._lerp(this.bass.current, this.bass.target, smoothing);
+        this.mid.current = this._lerp(this.mid.current, this.mid.target, smoothing);
+        this.high.current = this._lerp(this.high.current, this.high.target, smoothing);
+        this.hue.current = this._lerp(this.hue.current, this.hue.target, smoothing);
+        
+        // Decay targets
+        this.bass.target *= 0.95;
+        this.energy.target *= 0.98;
         
         // Update visuals
         this._updateParticles(elapsed);
-        this._updateCenterSphere(elapsed);
+        this._updateCenterMesh(elapsed);
         this._updateRings(elapsed);
+        this._updateGlow(elapsed);
         this._updateColors();
+        this._updateCamera(elapsed);
         
-        // Camera subtle movement
-        this.camera.position.x = Math.sin(elapsed * 0.1) * 10;
-        this.camera.position.y = Math.cos(elapsed * 0.1) * 5;
-        this.camera.lookAt(0, 0, 0);
-        
-        // Render
         this.renderer.render(this.scene, this.camera);
-        
-        // FPS counter
         this._updateFps();
     }
 
@@ -327,39 +326,52 @@ class Visualizer {
         
         const positions = this.particles.geometry.attributes.position.array;
         const original = this.particleOriginalPositions;
-        const energy = this.currentEnergy;
-        const beat = this.beatIntensity;
+        const phases = this.particlePhases;
         
-        for (let i = 0; i < positions.length; i += 3) {
-            const ox = original[i];
-            const oy = original[i + 1];
-            const oz = original[i + 2];
+        const energy = this.energy.current;
+        const bass = this.bass.current;
+        
+        for (let i = 0; i < positions.length / 3; i++) {
+            const i3 = i * 3;
+            const ox = original[i3];
+            const oy = original[i3 + 1];
+            const oz = original[i3 + 2];
             
-            // Distance from center
             const dist = Math.sqrt(ox * ox + oy * oy + oz * oz);
+            const phase = phases[i];
             
-            // Expand based on energy
-            const scale = 1 + energy * 0.3 + beat * 0.5;
+            // Gentle breathing motion
+            const breathe = Math.sin(elapsed * 0.5 + phase) * 0.02;
+            // Energy expansion
+            const expansion = 1 + energy * 0.15 + bass * 0.1;
+            // Subtle wave
+            const wave = Math.sin(elapsed * 0.8 + dist * 0.02 + phase) * energy * 3;
             
-            // Add wave motion
-            const wave = Math.sin(elapsed * 2 + dist * 0.02) * energy * 5;
+            const scale = expansion + breathe;
+            const nx = ox / dist;
+            const ny = oy / dist;
+            const nz = oz / dist;
             
-            positions[i] = ox * scale + (ox / dist) * wave;
-            positions[i + 1] = oy * scale + (oy / dist) * wave;
-            positions[i + 2] = oz * scale + (oz / dist) * wave;
+            positions[i3] = ox * scale + nx * wave;
+            positions[i3 + 1] = oy * scale + ny * wave;
+            positions[i3 + 2] = oz * scale + nz * wave;
         }
         
         this.particles.geometry.attributes.position.needsUpdate = true;
-        this.particles.rotation.y = elapsed * 0.05;
+        
+        // Slow rotation
+        this.particles.rotation.y = elapsed * 0.02;
+        this.particles.rotation.x = Math.sin(elapsed * 0.1) * 0.1;
     }
 
-    _updateCenterSphere(elapsed) {
-        if (!this.centerSphere) return;
+    _updateCenterMesh(elapsed) {
+        if (!this.centerMesh) return;
         
-        const positions = this.centerSphere.geometry.attributes.position.array;
-        const original = this.sphereOriginalPositions;
-        const energy = this.currentEnergy;
-        const beat = this.beatIntensity;
+        const positions = this.centerMesh.geometry.attributes.position.array;
+        const original = this.centerOriginalPositions;
+        
+        const energy = this.energy.current;
+        const bass = this.bass.current;
         
         for (let i = 0; i < positions.length; i += 3) {
             const ox = original[i];
@@ -367,75 +379,131 @@ class Visualizer {
             const oz = original[i + 2];
             
             const dist = Math.sqrt(ox * ox + oy * oy + oz * oz);
-            const noise = Math.sin(elapsed * 3 + i * 0.5) * energy * 2;
-            const beatPulse = beat * 3;
             
-            const scale = 1 + energy * 0.2 + beatPulse;
+            // Gentle morphing
+            const morph = Math.sin(elapsed * 2 + i * 0.1) * energy * 1.5;
+            // Bass pulse
+            const pulse = 1 + bass * 0.2;
             
-            positions[i] = ox * scale + (ox / dist) * noise;
-            positions[i + 1] = oy * scale + (oy / dist) * noise;
-            positions[i + 2] = oz * scale + (oz / dist) * noise;
+            const scale = pulse;
+            
+            positions[i] = ox * scale + (ox / dist) * morph;
+            positions[i + 1] = oy * scale + (oy / dist) * morph;
+            positions[i + 2] = oz * scale + (oz / dist) * morph;
         }
         
-        this.centerSphere.geometry.attributes.position.needsUpdate = true;
-        this.centerSphere.rotation.x = elapsed * 0.2;
-        this.centerSphere.rotation.y = elapsed * 0.3;
+        this.centerMesh.geometry.attributes.position.needsUpdate = true;
+        
+        // Smooth rotation
+        this.centerMesh.rotation.x = elapsed * 0.1;
+        this.centerMesh.rotation.y = elapsed * 0.15;
     }
 
     _updateRings(elapsed) {
-        const energy = this.currentEnergy;
-        const beat = this.beatIntensity;
+        const energy = this.energy.current;
+        const bass = this.bass.current;
         
         this.rings.forEach((ring, i) => {
-            const baseRadius = ring.userData.baseRadius;
-            const phase = i * 0.5;
+            const data = ring.userData;
             
-            // Pulse on beat
-            const scale = 1 + beat * 0.3 + Math.sin(elapsed * 2 + phase) * energy * 0.1;
-            ring.scale.set(scale, scale, 1);
+            // Subtle scale pulse
+            const pulse = 1 + bass * 0.1 * (1 - i * 0.2);
+            ring.scale.set(pulse, pulse, 1);
             
-            // Rotate
-            ring.rotation.z = elapsed * 0.1 * (i % 2 === 0 ? 1 : -1);
+            // Smooth rotation
+            ring.rotation.z = elapsed * data.rotationSpeed * (i % 2 === 0 ? 1 : -1);
             
-            // Tilt based on energy
-            ring.rotation.x = Math.PI / 2 + Math.sin(elapsed + phase) * energy * 0.3;
+            // Gentle tilt based on energy
+            const tilt = Math.sin(elapsed * 0.5 + data.phase) * energy * 0.15;
+            ring.rotation.x = Math.PI / 2 + tilt;
+            ring.rotation.y = tilt * 0.5;
+            
+            // Opacity based on energy
+            ring.material.opacity = 0.15 + energy * 0.2;
         });
     }
 
+    _updateGlow(elapsed) {
+        if (!this.glowMesh) return;
+        
+        const energy = this.energy.current;
+        const bass = this.bass.current;
+        
+        // Pulse glow
+        const scale = 1 + energy * 0.3 + bass * 0.2;
+        this.glowMesh.scale.set(scale, scale, scale);
+        this.glowMesh.material.opacity = 0.05 + energy * 0.1;
+        
+        // Slow rotation
+        this.glowMesh.rotation.y = elapsed * 0.05;
+    }
+
     _updateColors() {
-        const hue = this.currentHue;
-        const energy = this.currentEnergy;
+        const hue = this.hue.current / 360;
+        const energy = this.energy.current;
         
-        // Convert HSL to RGB
-        const color = new THREE.Color();
-        color.setHSL(hue / 360, 0.8, 0.5 + energy * 0.3);
+        // Main color
+        const mainColor = new THREE.Color();
+        mainColor.setHSL(hue, 0.6, 0.5 + energy * 0.2);
         
-        // Update center sphere
-        if (this.centerSphere) {
-            this.centerSphere.material.color.copy(color);
+        // Secondary color (complementary)
+        const secColor = new THREE.Color();
+        secColor.setHSL((hue + 0.3) % 1, 0.5, 0.4);
+        
+        // Update center mesh
+        if (this.centerMesh) {
+            this.centerMesh.material.color.lerp(mainColor, 0.1);
+            this.centerMesh.material.emissive.setHSL(hue, 0.3, 0.1 + energy * 0.1);
         }
         
-        // Update rings with slight hue variation
+        // Update rings with gradient
         this.rings.forEach((ring, i) => {
+            const ringHue = (hue + i * 0.08) % 1;
             const ringColor = new THREE.Color();
-            ringColor.setHSL((hue + i * 30) / 360 % 1, 0.7, 0.5);
-            ring.material.color.copy(ringColor);
-            ring.material.opacity = 0.2 + energy * 0.4;
+            ringColor.setHSL(ringHue, 0.5, 0.5);
+            ring.material.color.lerp(ringColor, 0.1);
         });
         
-        // Update particle colors
+        // Update glow
+        if (this.glowMesh) {
+            this.glowMesh.material.color.lerp(mainColor, 0.1);
+        }
+        
+        // Update particles with subtle variation
         if (this.particles) {
             const colors = this.particles.geometry.attributes.color.array;
             for (let i = 0; i < colors.length; i += 3) {
-                const particleHue = (hue + (i / colors.length) * 60) / 360 % 1;
+                const particleHue = (hue + (i / colors.length) * 0.15) % 1;
                 const c = new THREE.Color();
-                c.setHSL(particleHue, 0.8, 0.6);
-                colors[i] = c.r;
-                colors[i + 1] = c.g;
-                colors[i + 2] = c.b;
+                c.setHSL(particleHue, 0.5 + energy * 0.2, 0.5 + energy * 0.2);
+                
+                // Smooth color transition
+                colors[i] += (c.r - colors[i]) * 0.05;
+                colors[i + 1] += (c.g - colors[i + 1]) * 0.05;
+                colors[i + 2] += (c.b - colors[i + 2]) * 0.05;
             }
             this.particles.geometry.attributes.color.needsUpdate = true;
         }
+        
+        // Update lights
+        if (this.mainLight) {
+            this.mainLight.color.lerp(mainColor, 0.1);
+        }
+        if (this.secondLight) {
+            this.secondLight.color.lerp(secColor, 0.1);
+        }
+    }
+
+    _updateCamera(elapsed) {
+        // Very subtle camera movement
+        const radius = 120;
+        const speed = 0.05;
+        
+        this.camera.position.x = Math.sin(elapsed * speed) * 15;
+        this.camera.position.y = Math.cos(elapsed * speed * 0.7) * 10;
+        this.camera.position.z = radius + Math.sin(elapsed * speed * 0.5) * 10;
+        
+        this.camera.lookAt(0, 0, 0);
     }
 
     _updateFps() {
@@ -453,5 +521,4 @@ class Visualizer {
     }
 }
 
-// Export
 window.Visualizer = Visualizer;
