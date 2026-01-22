@@ -62,26 +62,48 @@
 
         <!-- Visual Settings -->
         <div id="settings-panel">
-            <details>
+            <details open>
                 <summary>Visual Settings</summary>
+                <div class="setting">
+                    <label for="shape">Shape</label>
+                    <select id="shape">
+                        <option value="sphere">Sphere</option>
+                        <option value="cube">Cube</option>
+                        <option value="torus">Torus</option>
+                        <option value="octahedron">Octahedron</option>
+                        <option value="torusKnot">Torus Knot</option>
+                        <option value="icosahedron">Icosahedron</option>
+                    </select>
+                </div>
+                <div class="setting">
+                    <label for="background-color">Background</label>
+                    <div class="color-options">
+                        <button class="color-btn active" data-color="#000011" style="background:#000011"></button>
+                        <button class="color-btn" data-color="#110022" style="background:#110022"></button>
+                        <button class="color-btn" data-color="#001111" style="background:#001111"></button>
+                        <button class="color-btn" data-color="#111100" style="background:#111100"></button>
+                        <button class="color-btn" data-color="#220011" style="background:#220011"></button>
+                        <button class="color-btn" data-color="#000000" style="background:#000000"></button>
+                    </div>
+                </div>
                 <div class="setting">
                     <label for="sensitivity">Sensitivity</label>
                     <input type="range" id="sensitivity" min="0.5" max="3" step="0.1" value="1.5">
                 </div>
                 <div class="setting">
-                    <label for="smoothing">Smoothing</label>
-                    <input type="range" id="smoothing" min="0" max="0.95" step="0.05" value="0.8">
+                    <label for="reactivity">Reactivity</label>
+                    <input type="range" id="reactivity" min="0.3" max="2" step="0.1" value="1">
                 </div>
                 <div class="setting">
-                    <label for="color-mode">Color Mode</label>
-                    <select id="color-mode">
-                        <option value="pitch">Pitch-based</option>
-                        <option value="energy">Energy-based</option>
-                        <option value="rainbow">Rainbow Cycle</option>
-                        <option value="monochrome">Monochrome</option>
-                    </select>
+                    <label for="smoothing">Smoothing</label>
+                    <input type="range" id="smoothing" min="0.5" max="0.95" step="0.01" value="0.85">
                 </div>
             </details>
+        </div>
+        
+        <!-- Instructions -->
+        <div id="instructions">
+            Drag to rotate • Scroll to zoom
         </div>
 
         <!-- Status -->

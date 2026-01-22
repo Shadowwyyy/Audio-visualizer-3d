@@ -34,7 +34,9 @@ class UIController {
         // Settings
         this.sensitivitySlider = document.getElementById('sensitivity');
         this.smoothingSlider = document.getElementById('smoothing');
-        this.colorModeSelect = document.getElementById('color-mode');
+        this.reactivitySlider = document.getElementById('reactivity');
+        this.shapeSelect = document.getElementById('shape');
+        this.colorBtns = document.querySelectorAll('.color-btn');
         
         // Status
         this.statusText = document.getElementById('status-text');
@@ -110,13 +112,26 @@ class UIController {
             });
         }
         
-        if (this.colorModeSelect) {
-            this.colorModeSelect.addEventListener('change', (e) => {
-                this.app.visualizer.updateSettings({ 
-                    colorMode: e.target.value 
-                });
+        if (this.reactivitySlider) {
+            this.reactivitySlider.addEventListener('input', (e) => {
+                this.app.visualizer.setReactivity(parseFloat(e.target.value));
             });
         }
+        
+        if (this.shapeSelect) {
+            this.shapeSelect.addEventListener('change', (e) => {
+                this.app.visualizer.setShape(e.target.value);
+            });
+        }
+        
+        // Background color buttons
+        this.colorBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.colorBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.app.visualizer.setBackgroundColor(btn.dataset.color);
+            });
+        });
     }
 
     _switchSource(source) {
