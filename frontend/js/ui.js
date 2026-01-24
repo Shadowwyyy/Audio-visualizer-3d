@@ -6,21 +6,12 @@
 class UIController {
     constructor(app) {
         this.app = app;
-        this.currentSource = 'spotify';
+        this.currentSource = 'mic';
         
         this._bindElements();
         this._bindEvents();
     }
 
-    _bindElements() {
-        // Spotify
-        this.spotifyLogin = document.getElementById('spotify-login');
-        this.spotifyConnectBtn = document.getElementById('spotify-connect-btn');
-        this.spotifyTrackInfo = document.getElementById('spotify-track-info');
-        this.spotifyDisconnectBtn = document.getElementById('spotify-disconnect-btn');
-        this.trackAlbumArt = document.getElementById('track-album-art');
-        this.trackName = document.getElementById('track-name');
-        this.trackArtist = document.getElementById('track-artist');
         
         // Source tabs
         this.sourceTabs = document.querySelectorAll('.source-tab');
@@ -42,7 +33,7 @@ class UIController {
         this.statusText = document.getElementById('status-text');
     }
 
-    _bindEvents() {
+    _bindEvents(); {
         // Spotify connect
         if (this.spotifyConnectBtn) {
             this.spotifyConnectBtn.addEventListener('click', () => {
@@ -155,10 +146,7 @@ class UIController {
         
         // Show relevant controls
         switch (source) {
-            case 'spotify':
-                // Spotify is handled separately
-                this.setStatus(this.app.spotifyViz.isActive ? 'Connected to Spotify' : 'Connect to Spotify');
-                break;
+            case 'mic':
                 
             case 'mic':
                 if (this.micControls) this.micControls.style.display = 'block';

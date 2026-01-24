@@ -58,84 +58,16 @@ body {
     opacity: 0.8;
 }
 
-/* Spotify Panel */
-#spotify-panel {
+/* App Title */
+#app-title {
     position: absolute;
     top: 20px;
     right: 20px;
-}
-
-#spotify-connect-btn {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: #1DB954;
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 24px;
     font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-#spotify-connect-btn:hover {
-    background: #1ed760;
-    transform: scale(1.02);
-}
-
-#spotify-track-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(10px);
-    padding: 10px 15px;
-    border-radius: 8px;
-    max-width: 300px;
-}
-
-#track-album-art {
-    width: 50px;
-    height: 50px;
-    border-radius: 4px;
-    object-fit: cover;
-}
-
-#track-details {
-    flex: 1;
-    min-width: 0;
-}
-
-#track-name {
-    font-weight: 600;
-    font-size: 14px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-#track-artist {
-    font-size: 12px;
-    opacity: 0.7;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-#spotify-disconnect-btn {
-    background: none;
-    border: none;
-    color: #888;
-    cursor: pointer;
-    padding: 5px;
-    font-size: 16px;
-    transition: color 0.2s;
-}
-
-#spotify-disconnect-btn:hover {
-    color: #fff;
+    font-weight: 300;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
 }
 
 /* Source Panel */
