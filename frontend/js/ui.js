@@ -12,7 +12,7 @@ class UIController {
         this._bindEvents();
     }
 
-        
+    _bindElements() {
         // Source tabs
         this.sourceTabs = document.querySelectorAll('.source-tab');
         this.micControls = document.getElementById('mic-controls');
@@ -33,22 +33,7 @@ class UIController {
         this.statusText = document.getElementById('status-text');
     }
 
-    _bindEvents(); {
-        // Spotify connect
-        if (this.spotifyConnectBtn) {
-            this.spotifyConnectBtn.addEventListener('click', () => {
-                this.app.spotifyViz.login();
-            });
-        }
-        
-        // Spotify disconnect
-        if (this.spotifyDisconnectBtn) {
-            this.spotifyDisconnectBtn.addEventListener('click', async () => {
-                await this.app.spotifyViz.logout();
-                this.showSpotifyLogin();
-            });
-        }
-        
+    _bindEvents() {
         // Source tabs
         this.sourceTabs.forEach(tab => {
             tab.addEventListener('click', () => {
@@ -147,8 +132,6 @@ class UIController {
         // Show relevant controls
         switch (source) {
             case 'mic':
-                
-            case 'mic':
                 if (this.micControls) this.micControls.style.display = 'block';
                 this.setStatus('Click to start microphone');
                 break;
@@ -162,13 +145,11 @@ class UIController {
 
     async _toggleMicrophone() {
         if (this.app.audioInput.isActive && this.app.audioInput.mode === 'mic') {
-            // Stop microphone
             this.app.audioInput.stop();
             this.micStartBtn.textContent = 'Start Microphone';
             this.micStartBtn.classList.remove('active');
             this.setStatus('Microphone stopped');
         } else {
-            // Start microphone
             try {
                 this.micStartBtn.textContent = 'Starting...';
                 await this.app.audioInput.startMicrophone();
@@ -186,62 +167,18 @@ class UIController {
         const file = event.target.files[0];
         if (!file) return;
         
-        // Validate file type
         if (!file.type.startsWith('audio/')) {
             this.setStatus('Please select an audio file', 'error');
             return;
         }
         
-        // Update label
         this.fileLabel.textContent = file.name;
         
-        // Load into audio player
         const url = URL.createObjectURL(file);
         this.audioPlayer.src = url;
         this.audioPlayer.style.display = 'block';
         
         this.setStatus('File loaded - press play');
-    }
-
-    // ==========================================
-    // Public Methods
-    // ==========================================
-
-    showSpotifyLogin() {
-        if (this.spotifyLogin) this.spotifyLogin.style.display = 'block';
-        if (this.spotifyTrackInfo) this.spotifyTrackInfo.style.display = 'none';
-    }
-
-    hideSpotifyLogin() {
-        if (this.spotifyLogin) this.spotifyLogin.style.display = 'none';
-    }
-
-    showTrackInfo(track) {
-        if (!track) return;
-        
-        this.hideSpotifyLogin();
-        
-        if (this.spotifyTrackInfo) {
-            this.spotifyTrackInfo.style.display = 'flex';
-        }
-        
-        if (this.trackAlbumArt && track.album_art) {
-            this.trackAlbumArt.src = track.album_art;
-        }
-        
-        if (this.trackName) {
-            this.trackName.textContent = track.name || 'Unknown Track';
-        }
-        
-        if (this.trackArtist) {
-            this.trackArtist.textContent = track.artist || 'Unknown Artist';
-        }
-    }
-
-    clearTrackInfo() {
-        if (this.trackName) this.trackName.textContent = 'Not Playing';
-        if (this.trackArtist) this.trackArtist.textContent = '';
-        if (this.trackAlbumArt) this.trackAlbumArt.src = '';
     }
 
     setStatus(message, type = '') {
@@ -256,5 +193,4 @@ class UIController {
     }
 }
 
-// Export
 window.UIController = UIController;
